@@ -1,6 +1,6 @@
 # LiveSplit Glimpse
 
-LiveSplit Glimpse is a LiveSplit component that allows users to send updated to Glimpse. 
+LiveSplit Glimpse is a LiveSplit component that allows users to send updates to Glimpse. 
 
 ## Install
 
