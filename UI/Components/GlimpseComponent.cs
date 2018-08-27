@@ -17,16 +17,9 @@ namespace LiveSplit.UI.Components
     public class GlimpseComponent : IComponent
     {
         public Settings Settings { get; set; }
-        public TcpListener Server { get; set; }
 
         protected LiveSplitState State { get; set; }
         protected Form Form { get; set; }
-        protected TimerModel Model { get; set; }
-        protected ITimeFormatter DeltaFormatter { get; set; }
-        protected ITimeFormatter SplitTimeFormatter { get; set; }
-        protected NamedPipeServerStream WaitingServerPipe { get; set; }
-
-        protected bool AlwaysPauseGameTime { get; set; }
 
         public float PaddingTop => 0;
         public float PaddingBottom => 0;
@@ -40,31 +33,83 @@ namespace LiveSplit.UI.Components
         public GlimpseComponent(LiveSplitState state)
         {
             Settings = new Settings();
-            Model = new TimerModel();
-
-            SplitTimeFormatter = new RegularTimeFormatter(TimeAccuracy.Hundredths);
 
             ContextMenuControls = new Dictionary<string, Action>();
-            ContextMenuControls.Add("Start Server", Start);
+            ContextMenuControls.Add("Glimpse Settings", OpenGlimpseSettings);
 
             State = state;
             Form = state.Form;
-
-            Model.CurrentState = State;
+            
+            // add event listeners
             State.OnStart += State_OnStart;
-        }
+            State.OnSplit += State_OnSplit;
+            State.OnReset += State_OnReset;
+            State.OnSkipSplit += State_OnSkipSplit;
+            State.OnUndoSplit += State_OnUndoSplit;
+            State.OnPause += State_OnPause;
+            State.OnResume += State_OnResume;
 
-        public void Start()
+            // Events not supported currently 
+            State.OnUndoAllPauses += State_OnUndoAllPauses;
+            State.OnSwitchComparisonPrevious += State_OnSwitchComparisonPrevious;
+            State.OnSwitchComparisonNext += State_OnSwitchComparisonNext;
+            
+        }
+        
+        public void OpenGlimpseSettings()
         {
-            Console.Write("Hello");
+            Console.Out.WriteLine("OpenGlimpseSettings");
         }
 
         private void State_OnStart(object sender, EventArgs e)
         {
-            if (AlwaysPauseGameTime)
-                State.IsGameTimePaused = true;
+            Console.Out.WriteLine("OnStart");
         }
 
+        private void State_OnSplit(object sender, EventArgs e)
+        {
+            Console.Out.WriteLine("OnSplit");
+        }
+
+        private void State_OnReset(object sender, TimerPhase e)
+        {
+            Console.Out.WriteLine("OnReset");
+        }
+
+        private void State_OnSkipSplit(object sender, EventArgs e)
+        {
+            Console.Out.WriteLine("OnSkipSplit");
+        }
+
+        private void State_OnUndoSplit(object sender, EventArgs e)
+        {
+            Console.Out.WriteLine("OnUndoSplit");
+        }
+
+        private void State_OnPause(object sender, EventArgs e)
+        {
+            Console.Out.WriteLine("OnPause");
+        }
+
+        private void State_OnResume(object sender, EventArgs e)
+        {
+            Console.Out.WriteLine("OnResume");
+        }
+
+        private void State_OnUndoAllPauses(object sender, EventArgs e)
+        {
+            Console.Out.WriteLine("OnUndoAllPauses");
+        }
+
+        private void State_OnSwitchComparisonPrevious(object sender, EventArgs e)
+        {
+            Console.Out.WriteLine("OnSwitchComparisonPrevious");
+        }
+
+        private void State_OnSwitchComparisonNext(object sender, EventArgs e)
+        {
+            Console.Out.WriteLine("OnSwitchComparisonNext");
+        }
 
         public void DrawVertical(Graphics g, LiveSplitState state, float width, Region clipRegion)
         {
@@ -103,6 +148,7 @@ namespace LiveSplit.UI.Components
 
         public void Dispose()
         {
+            // remove event listeners
             State.OnStart -= State_OnStart;
         }
 
