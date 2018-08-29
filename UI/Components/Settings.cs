@@ -7,33 +7,11 @@ using System.Xml;
 namespace LiveSplit.UI.Components
 {
     public partial class Settings : UserControl
-    {
-        public ushort Port { get; set; }
-
-        public string LocalIP { get; set; }
-
-        public string GetIP()
-        {
-            IPAddress[] ipv4Addresses = Array.FindAll(
-                Dns.GetHostEntry(string.Empty).AddressList,
-                a => a.AddressFamily == AddressFamily.InterNetwork);
-            return ipv4Addresses[0].ToString();
-        }
-
-        public string PortString
-        {
-            get { return Port.ToString(); }
-            set { Port = ushort.Parse(value); }
-        }
-
+    { 
         public Settings()
         {
             InitializeComponent();
-            Port = 16834;
-            LocalIP = GetIP();
-            label3.Text = LocalIP;
-
-            txtPort.DataBindings.Add("Text", this, "PortString", false, DataSourceUpdateMode.OnPropertyChanged);
+            
         }
 
         public XmlNode GetSettings(XmlDocument document)
@@ -50,12 +28,17 @@ namespace LiveSplit.UI.Components
 
         private int CreateSettingsNode(XmlDocument document, XmlElement parent)
         {
-            return SettingsHelper.CreateSetting(document, parent, "Port", PortString);
+            return SettingsHelper.CreateSetting(document, parent, "AccessToken", "0");
         }
 
         public void SetSettings(XmlNode settings)
         {
-            PortString = SettingsHelper.ParseString(settings["Port"]);
+            //PortString = SettingsHelper.ParseString(settings["AccessToken"]);
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+
         }
     }
 }
