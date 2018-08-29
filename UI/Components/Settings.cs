@@ -7,11 +7,14 @@ using System.Xml;
 namespace LiveSplit.UI.Components
 {
     public partial class Settings : UserControl
-    { 
+    {
+        public GlimpseBrowser GlimpseBrowser { get; set; }
+
         public Settings()
         {
             InitializeComponent();
-            
+
+            GlimpseBrowser = new GlimpseBrowser();
         }
 
         public XmlNode GetSettings(XmlDocument document)
@@ -38,7 +41,8 @@ namespace LiveSplit.UI.Components
 
         private void button1_Click(object sender, EventArgs e)
         {
-
+            GlimpseBrowser.Show();
+            GlimpseBrowser.loadLoginUrl();
         }
     }
 }
