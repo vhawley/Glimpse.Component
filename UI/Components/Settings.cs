@@ -13,8 +13,6 @@ namespace LiveSplit.UI.Components
         public Settings()
         {
             InitializeComponent();
-
-            GlimpseBrowser = new GlimpseBrowser();
         }
 
         public XmlNode GetSettings(XmlDocument document)
@@ -41,6 +39,7 @@ namespace LiveSplit.UI.Components
 
         private void button1_Click(object sender, EventArgs e)
         {
+            GlimpseBrowser = new GlimpseBrowser();
             GlimpseBrowser.Show();
             GlimpseBrowser.loadLoginUrl();
         }

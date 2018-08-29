@@ -24,7 +24,12 @@ namespace LiveSplit.UI.Components
 
         private void webBrowser1_DocumentCompleted(object sender, WebBrowserDocumentCompletedEventArgs e)
         {
-            WebBrowser wb = (WebBrowser) sender;
+            Console.Out.WriteLine("DocumentCompleted");
+        }
+        
+        private void webBrowser1_Navigated(object sender, WebBrowserNavigatedEventArgs e)
+        {
+            Console.Out.WriteLine("Navigated");
         }
     }
 }
