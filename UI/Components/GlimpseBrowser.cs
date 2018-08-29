@@ -15,6 +15,9 @@ namespace LiveSplit.UI.Components
         public GlimpseBrowser()
         {
             InitializeComponent();
+
+            webBrowser1.DocumentCompleted += webBrowser1_DocumentCompleted;
+            webBrowser1.Navigated += webBrowser1_Navigated;
         }
 
         public void loadLoginUrl()
@@ -29,7 +32,7 @@ namespace LiveSplit.UI.Components
         
         private void webBrowser1_Navigated(object sender, WebBrowserNavigatedEventArgs e)
         {
-            Console.Out.WriteLine("Navigated");
+            textBox1.Text = webBrowser1.Url.ToString();
         }
     }
 }
