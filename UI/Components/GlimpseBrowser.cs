@@ -1,17 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Configuration;
 using System.Windows.Forms;
 
 namespace LiveSplit.UI.Components
 {
     public partial class GlimpseBrowser : Form
     {
+
         public GlimpseBrowser()
         {
             InitializeComponent();
@@ -23,7 +18,7 @@ namespace LiveSplit.UI.Components
 
         public void loadLoginUrl()
         {
-            webBrowser1.Navigate("https://google.com");
+            webBrowser1.Navigate("url/login/creator");
         }
 
         private void webBrowser1_DocumentCompleted(object sender, WebBrowserDocumentCompletedEventArgs e)
@@ -33,11 +28,13 @@ namespace LiveSplit.UI.Components
 
         private void webBrowser1_Navigated(object sender, WebBrowserNavigatedEventArgs e)
         {
-
+            Console.Out.WriteLine("Navigated to... " + e.Url.ToString());
+            textBox1.Text = e.Url.ToString();
         }
 
         private void webBrowser1_Navigating(object sender, WebBrowserNavigatingEventArgs e)
         {
+            Console.Out.WriteLine("Navigating to... " + e.Url.ToString());
             textBox1.Text = e.Url.ToString();
         }
     }
