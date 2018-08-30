@@ -18,6 +18,7 @@ namespace LiveSplit.UI.Components
 
             webBrowser1.DocumentCompleted += webBrowser1_DocumentCompleted;
             webBrowser1.Navigated += webBrowser1_Navigated;
+            webBrowser1.Navigating += webBrowser1_Navigating;
         }
 
         public void loadLoginUrl()
@@ -29,10 +30,15 @@ namespace LiveSplit.UI.Components
         {
             Console.Out.WriteLine("DocumentCompleted");
         }
-        
+
         private void webBrowser1_Navigated(object sender, WebBrowserNavigatedEventArgs e)
         {
-            textBox1.Text = webBrowser1.Url.ToString();
+
+        }
+
+        private void webBrowser1_Navigating(object sender, WebBrowserNavigatingEventArgs e)
+        {
+            textBox1.Text = e.Url.ToString();
         }
     }
 }
