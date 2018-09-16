@@ -52,6 +52,7 @@ namespace LiveSplit.UI.Components
 
         public void SetSettings(XmlNode settings)
         {
+            Console.Out.WriteLine("SetSettings");
             AccessToken = SettingsHelper.ParseString(settings["AccessToken"]);
             RefreshToken = SettingsHelper.ParseString(settings["RefreshToken"]);
             IdToken = SettingsHelper.ParseString(settings["IdToken"]);
@@ -64,6 +65,8 @@ namespace LiveSplit.UI.Components
             RefreshToken = creds.Value<string>("refresh_token");
             IdToken = creds.Value<string>("id_token");
             GlimpseBrowser.Close();
+
+            nameLabel.Text = "name"; 
         }
 
         private void button1_Click(object sender, EventArgs e)
@@ -72,11 +75,6 @@ namespace LiveSplit.UI.Components
             GlimpseBrowser.RaiseCredentialsEvent += ReceiveCredentials;
             GlimpseBrowser.Show();
             GlimpseBrowser.loadLoginUrl();
-        }
-
-        private void nameLabel_Click(object sender, EventArgs e)
-        {
-
         }
     }
 }

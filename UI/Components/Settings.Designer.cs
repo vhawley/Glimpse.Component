@@ -69,7 +69,6 @@
             this.nameLabel.Size = new System.Drawing.Size(75, 13);
             this.nameLabel.TabIndex = 1;
             this.nameLabel.Text = "Not Logged In";
-            this.nameLabel.Click += new System.EventHandler(this.nameLabel_Click);
             // 
             // button1
             // 
