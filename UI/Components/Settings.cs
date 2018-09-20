@@ -2,6 +2,8 @@
 using System;
 using System.Windows.Forms;
 using System.Xml;
+using System.Net.Http;
+using System.Threading.Tasks;
 
 namespace LiveSplit.UI.Components
 {
@@ -20,6 +22,7 @@ namespace LiveSplit.UI.Components
         public string AccessToken;
         public string RefreshToken;
         public string IdToken;
+        private static readonly HttpClient client = new HttpClient();
 
         public XmlNode GetSettings(XmlDocument document)
         {
@@ -37,17 +40,17 @@ namespace LiveSplit.UI.Components
 
         private int CreateSettingsAccessNode(XmlDocument document, XmlElement parent)
         {
-            return SettingsHelper.CreateSetting(document, parent, "AccessToken", "0");
+            return SettingsHelper.CreateSetting(document, parent, "AccessToken", AccessToken);
         }
 
         private int CreateSettingsRefreshNode(XmlDocument document, XmlElement parent)
         {
-            return SettingsHelper.CreateSetting(document, parent, "RefreshToken", "0");
+            return SettingsHelper.CreateSetting(document, parent, "RefreshToken", RefreshToken);
         }
 
         private int CreateSettingsIdNode(XmlDocument document, XmlElement parent)
         {
-            return SettingsHelper.CreateSetting(document, parent, "IdToken", "0");
+            return SettingsHelper.CreateSetting(document, parent, "IdToken", IdToken);
         }
 
         public void SetSettings(XmlNode settings)
@@ -58,6 +61,28 @@ namespace LiveSplit.UI.Components
             IdToken = SettingsHelper.ParseString(settings["IdToken"]);
         }
 
+        public async void UpdateDisplayName()
+        {
+            nameLabel.Text = "Not Logged In";
+            // Make user request
+            HttpRequestMessage userRequest = new HttpRequestMessage(HttpMethod.Get, "https://api.dev.glimpsesr.com/user");
+            userRequest.Headers.Add("Authorization", "OAuth " + AccessToken);
+            HttpResponseMessage response = await client.SendAsync(userRequest);
+            try
+            {
+                JObject userJson = JObject.Parse(await response.Content.ReadAsStringAsync());
+                string name = userJson.Value<string>("displayName");
+                if (name != null)
+                {
+                    nameLabel.Text = name;
+                }
+            }
+            catch (Exception exc)
+            {
+                Console.Out.WriteLine(exc.Message);
+            }
+        }
+
         public void ReceiveCredentials(object sender, CredentialsEventArgs e)
         {
             JObject creds = e.Message;
@@ -66,7 +91,7 @@ namespace LiveSplit.UI.Components
             IdToken = creds.Value<string>("id_token");
             GlimpseBrowser.Close();
 
-            nameLabel.Text = "name"; 
+            UpdateDisplayName();
         }
 
         private void button1_Click(object sender, EventArgs e)
