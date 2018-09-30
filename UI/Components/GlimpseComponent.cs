@@ -1,6 +1,7 @@
 ﻿using LiveSplit.Model;
 using LiveSplit.Options;
 using LiveSplit.TimeFormatters;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -52,7 +53,7 @@ namespace LiveSplit.UI.Components
             State.OnPause += State_OnPause;
             State.OnResume += State_OnResume;
 
-            // Events not supported currently 
+            // Events not supported by Glimpse currently 
             State.OnUndoAllPauses += State_OnUndoAllPauses;
             State.OnSwitchComparisonPrevious += State_OnSwitchComparisonPrevious;
             State.OnSwitchComparisonNext += State_OnSwitchComparisonNext;
@@ -64,9 +65,42 @@ namespace LiveSplit.UI.Components
             Console.Out.WriteLine("OpenGlimpseSettings");
         }
 
-        private void State_OnStart(object sender, EventArgs e)
+        private async void State_OnStart(object sender, EventArgs e)
         {
-            Console.Out.WriteLine(Factory.GetAccessToken());
+            JObject comparisons = new JObject();
+            List<string> splitNames = new List<string>();
+
+            // go through run to get split names and  comparisons
+            for (int i = 0; i < State.Run.Count; i++) // need i for index of comparisons object
+            {
+                Segment s = (Segment) State.Run[i];
+
+                // add to splitnames
+                splitNames.Add(s.Name);
+
+                // generate comparisons object
+                foreach (string key in s.Comparisons.Keys)
+                {
+                    // create array for this comparison if it doesn't exist
+                    if (comparisons[key] == null)
+                    {
+                        comparisons[key] = new JArray();
+                    }
+                    JArray comparisonsArray = (JArray)comparisons[key];
+
+                    // get comparison time and add to array
+                    TimeSpan? comparisonTime = s.Comparisons[key].RealTime;
+                    try
+                    {
+                        comparisonsArray.Add(comparisonTime.Value.TotalMilliseconds);
+                    } catch (Exception exc)
+                    {
+                        comparisonsArray.Add(null);
+                        Console.Out.WriteLine(exc.Message);
+                    }
+                }
+            }
+            HttpStatusCode status = await Factory.PostGlimpseStartEvent(State.Run.GameName, State.Run.CategoryName, splitNames, comparisons, State.AttemptStarted.Time);
             Console.Out.WriteLine("OnStart");
         }
 
