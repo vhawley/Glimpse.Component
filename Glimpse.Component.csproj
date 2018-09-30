@@ -75,6 +75,7 @@
     </Compile>
     <Compile Include="UI\Components\GlimpseComponent.cs" />
     <Compile Include="UI\Components\GlimpseFactory.cs" />
+    <Compile Include="UI\Components\RequestFactory.cs" />
     <Compile Include="UI\Components\Settings.cs">
       <SubType>UserControl</SubType>
     </Compile>

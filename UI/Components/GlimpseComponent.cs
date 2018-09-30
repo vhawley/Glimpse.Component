@@ -30,9 +30,12 @@ namespace LiveSplit.UI.Components
 
         public IDictionary<string, Action> ContextMenuControls { get; protected set; }
 
+        public RequestFactory Factory;
+
         public GlimpseComponent(LiveSplitState state)
         {
-            Settings = new Settings();
+            Factory = new RequestFactory();
+            Settings = new Settings(Factory);
 
             ContextMenuControls = new Dictionary<string, Action>();
             ContextMenuControls.Add("Glimpse Settings", OpenGlimpseSettings);
@@ -63,6 +66,7 @@ namespace LiveSplit.UI.Components
 
         private void State_OnStart(object sender, EventArgs e)
         {
+            Console.Out.WriteLine(Factory.GetAccessToken());
             Console.Out.WriteLine("OnStart");
         }
 

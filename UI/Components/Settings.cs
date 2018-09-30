@@ -10,19 +10,15 @@ namespace LiveSplit.UI.Components
     public partial class Settings : UserControl
     {
         public GlimpseBrowser GlimpseBrowser { get; set; }
+        private RequestFactory Factory;
 
-        public Settings()
+        public Settings(RequestFactory factory)
         {
             InitializeComponent();
-            AccessToken = "0";
-            RefreshToken = "0";
-            IdToken = "0";
-        }
+            Factory = factory;
 
-        public string AccessToken;
-        public string RefreshToken;
-        public string IdToken;
-        private static readonly HttpClient client = new HttpClient();
+            UpdateDisplayName();
+        }
 
         public XmlNode GetSettings(XmlDocument document)
         {
@@ -41,47 +37,28 @@ namespace LiveSplit.UI.Components
 
         private int CreateSettingsAccessNode(XmlDocument document, XmlElement parent)
         {
-            return SettingsHelper.CreateSetting(document, parent, "AccessToken", AccessToken);
+            return SettingsHelper.CreateSetting(document, parent, "AccessToken", Factory.GetAccessToken());
         }
 
         private int CreateSettingsRefreshNode(XmlDocument document, XmlElement parent)
         {
-            return SettingsHelper.CreateSetting(document, parent, "RefreshToken", RefreshToken);
+            return SettingsHelper.CreateSetting(document, parent, "RefreshToken", Factory.GetRefreshToken());
         }
 
         private int CreateSettingsIdNode(XmlDocument document, XmlElement parent)
         {
-            return SettingsHelper.CreateSetting(document, parent, "IdToken", IdToken);
+            return SettingsHelper.CreateSetting(document, parent, "IdToken", Factory.GetIdToken());
         }
 
         public void SetSettings(XmlNode settings)
         {
             Console.Out.WriteLine("SetSettings");
-            AccessToken = SettingsHelper.ParseString(settings["AccessToken"]);
-            RefreshToken = SettingsHelper.ParseString(settings["RefreshToken"]);
-            IdToken = SettingsHelper.ParseString(settings["IdToken"]);
-        }
+            string accessToken = SettingsHelper.ParseString(settings["AccessToken"]);
+            string refreshToken = SettingsHelper.ParseString(settings["RefreshToken"]);
+            string idToken = SettingsHelper.ParseString(settings["IdToken"]);
 
-        public async void UpdateDisplayName()
-        {
-            nameLabel.Text = "Not Logged In";
-            // Make user request
-            HttpRequestMessage userRequest = new HttpRequestMessage(HttpMethod.Get, "https://api.dev.glimpsesr.com/user");
-            userRequest.Headers.Add("Authorization", "OAuth " + AccessToken);
-            HttpResponseMessage response = await client.SendAsync(userRequest);
-            try
-            {
-                JObject userJson = JObject.Parse(await response.Content.ReadAsStringAsync());
-                string name = userJson.Value<string>("displayName");
-                if (name != null)
-                {
-                    nameLabel.Text = name;
-                }
-            }
-            catch (Exception exc)
-            {
-                Console.Out.WriteLine(exc.Message);
-            }
+            // it's ok if they're null
+            Factory.SetCredentials(accessToken, refreshToken, idToken);
         }
 
         public void ReceiveCredentials(object sender, CredentialsEventArgs e)
@@ -89,12 +66,21 @@ namespace LiveSplit.UI.Components
             Console.Out.WriteLine("ReceiveCredentials");
 
             JObject creds = e.Message;
-            AccessToken = creds.Value<string>("access_token");
-            RefreshToken = creds.Value<string>("refresh_token");
-            IdToken = creds.Value<string>("id_token");
+            string accessToken = creds.Value<string>("access_token");
+            string refreshToken = creds.Value<string>("refresh_token");
+            string idToken = creds.Value<string>("id_token");
+
+            Factory.SetCredentials(accessToken, refreshToken, idToken);
+
             GlimpseBrowser.Close();
 
             UpdateDisplayName();
+        }
+
+        public async void UpdateDisplayName()
+        {
+            string name = await Factory.GetDisplayName();
+            nameLabel.Text = name == null ? "Not Logged In" : name;
         }
 
         private void button1_Click(object sender, EventArgs e)
