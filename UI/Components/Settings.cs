@@ -26,6 +26,7 @@ namespace LiveSplit.UI.Components
 
         public XmlNode GetSettings(XmlDocument document)
         {
+            Console.Out.WriteLine("GetSettings");
             var parent = document.CreateElement("Settings");
             CreateSettingsAccessNode(document, parent);
             CreateSettingsRefreshNode(document, parent);
@@ -85,6 +86,8 @@ namespace LiveSplit.UI.Components
 
         public void ReceiveCredentials(object sender, CredentialsEventArgs e)
         {
+            Console.Out.WriteLine("ReceiveCredentials");
+
             JObject creds = e.Message;
             AccessToken = creds.Value<string>("access_token");
             RefreshToken = creds.Value<string>("refresh_token");

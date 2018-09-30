@@ -6,32 +6,6 @@ using System.Xml;
 
 namespace LiveSplit.UI.Components
 {
-
-    public class CredentialsEventArgs : EventArgs
-    {
-        public CredentialsEventArgs(string s)
-        {
-            try
-            {
-                JObject json = JObject.Parse(s);
-                message = json;
-            }
-            catch (Exception exc)
-            {
-                Console.Out.WriteLine(exc.Message);
-                message = null;
-            }
-        }
-
-        private JObject message;
-
-        public JObject Message
-        {
-            get { return message; }
-            set { message = value; }
-        }
-    }
-
     public partial class GlimpseBrowser : Form
     {
 
@@ -78,6 +52,31 @@ namespace LiveSplit.UI.Components
             // a race condition if the last subscriber unsubscribes
             // immediately after the null check and before the event is raised.
             RaiseCredentialsEvent?.Invoke(this, e);
+        }
+    }
+
+    public class CredentialsEventArgs : EventArgs
+    {
+        public CredentialsEventArgs(string s)
+        {
+            try
+            {
+                JObject json = JObject.Parse(s);
+                message = json;
+            }
+            catch (Exception exc)
+            {
+                Console.Out.WriteLine(exc.Message);
+                message = null;
+            }
+        }
+
+        private JObject message;
+
+        public JObject Message
+        {
+            get { return message; }
+            set { message = value; }
         }
     }
 }

@@ -32,6 +32,7 @@
             this.label1 = new System.Windows.Forms.Label();
             this.nameLabel = new System.Windows.Forms.Label();
             this.button1 = new System.Windows.Forms.Button();
+            this.disclaimerLabel = new System.Windows.Forms.Label();
             this.tableLayoutPanel1.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -43,11 +44,13 @@
             this.tableLayoutPanel1.Controls.Add(this.label1, 0, 0);
             this.tableLayoutPanel1.Controls.Add(this.nameLabel, 1, 0);
             this.tableLayoutPanel1.Controls.Add(this.button1, 1, 1);
+            this.tableLayoutPanel1.Controls.Add(this.disclaimerLabel, 1, 2);
             this.tableLayoutPanel1.Location = new System.Drawing.Point(10, 10);
             this.tableLayoutPanel1.Name = "tableLayoutPanel1";
-            this.tableLayoutPanel1.RowCount = 2;
-            this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 9.502262F));
-            this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 90.49773F));
+            this.tableLayoutPanel1.RowCount = 3;
+            this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 38.46154F));
+            this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 61.53846F));
+            this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 168F));
             this.tableLayoutPanel1.Size = new System.Drawing.Size(424, 221);
             this.tableLayoutPanel1.TabIndex = 0;
             // 
@@ -72,13 +75,23 @@
             // 
             // button1
             // 
-            this.button1.Location = new System.Drawing.Point(97, 24);
+            this.button1.Location = new System.Drawing.Point(97, 23);
             this.button1.Name = "button1";
             this.button1.Size = new System.Drawing.Size(135, 23);
             this.button1.TabIndex = 2;
             this.button1.Text = "Login with Twitch";
             this.button1.UseVisualStyleBackColor = true;
             this.button1.Click += new System.EventHandler(this.button1_Click);
+            // 
+            // disclaimerLabel
+            // 
+            this.disclaimerLabel.AutoSize = true;
+            this.disclaimerLabel.Location = new System.Drawing.Point(97, 52);
+            this.disclaimerLabel.Name = "disclaimerLabel";
+            this.disclaimerLabel.Size = new System.Drawing.Size(306, 26);
+            this.disclaimerLabel.TabIndex = 3;
+            this.disclaimerLabel.Text = "NOTE: Login information is saved with your layout.  Your layout must be saved aft" +
+    "er logging in.  Do not share your layout file.";
             // 
             // Settings
             // 
@@ -100,5 +113,6 @@
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.Label nameLabel;
         private System.Windows.Forms.Button button1;
+        private System.Windows.Forms.Label disclaimerLabel;
     }
 }
