@@ -104,7 +104,7 @@ namespace LiveSplit.UI.Components
             return null;
         }
 
-        public async Task<HttpStatusCode> PostGlimpseStartEvent(string gameName, string categoryName, List<string> splitNames, JObject comparisons, DateTime startTime)
+        public async Task<HttpResponseMessage> PostGlimpseStartEvent(string gameName, string categoryName, List<string> splitNames, JObject comparisons, DateTime startTime)
         {
             JObject requestContent = new JObject();
             requestContent["type"] = "GlimpseRunStart";
@@ -115,13 +115,8 @@ namespace LiveSplit.UI.Components
             requestContent["startTime"] = startTime.ToString("o");
 
             HttpResponseMessage response = await PostGlimpseEvent(requestContent);
-
-            if (response.StatusCode != HttpStatusCode.OK)
-            {
-                Console.Out.WriteLine(await response.Content.ReadAsStringAsync());
-            }
-
-            return response.StatusCode;
+            
+            return response;
         }
 
         private async Task<HttpResponseMessage> PostGlimpseEvent(JObject content)

@@ -9,6 +9,7 @@ using System.IO;
 using System.IO.Pipes;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Net.Sockets;
 using System.Windows.Forms;
 using System.Xml;
@@ -32,6 +33,8 @@ namespace LiveSplit.UI.Components
         public IDictionary<string, Action> ContextMenuControls { get; protected set; }
 
         public RequestFactory Factory;
+
+        public int? runID;
 
         public GlimpseComponent(LiveSplitState state)
         {
@@ -70,7 +73,10 @@ namespace LiveSplit.UI.Components
             JObject comparisons = new JObject();
             List<string> splitNames = new List<string>();
 
-            // go through run to get split names and  comparisons
+            // object to store last comparison time values for each comparison type 
+            Dictionary<string, double?> lasts = new Dictionary<string, double?>();
+
+            // go through run to get split names and comparisons; for each segment in run
             for (int i = 0; i < State.Run.Count; i++) // need i for index of comparisons object
             {
                 Segment s = (Segment) State.Run[i];
@@ -78,7 +84,7 @@ namespace LiveSplit.UI.Components
                 // add to splitnames
                 splitNames.Add(s.Name);
 
-                // generate comparisons object
+                // for each comparison object at this segment
                 foreach (string key in s.Comparisons.Keys)
                 {
                     // create array for this comparison if it doesn't exist
@@ -88,11 +94,18 @@ namespace LiveSplit.UI.Components
                     }
                     JArray comparisonsArray = (JArray)comparisons[key];
 
+                    // create double for last comparison value if it doesn't exist
+                    if (!lasts.ContainsKey(key))
+                    {
+                        lasts.Add(key, 0);
+                    }
+
                     // get comparison time and add to array
                     TimeSpan? comparisonTime = s.Comparisons[key].RealTime;
                     try
                     {
-                        comparisonsArray.Add(comparisonTime.Value.TotalMilliseconds);
+                        comparisonsArray.Add(comparisonTime.Value.TotalMilliseconds - lasts[key]);
+                        lasts[key] = comparisonTime.Value.TotalMilliseconds;
                     } catch (Exception exc)
                     {
                         comparisonsArray.Add(null);
@@ -100,7 +113,30 @@ namespace LiveSplit.UI.Components
                     }
                 }
             }
-            HttpStatusCode status = await Factory.PostGlimpseStartEvent(State.Run.GameName, State.Run.CategoryName, splitNames, comparisons, State.AttemptStarted.Time);
+            HttpResponseMessage response = await Factory.PostGlimpseStartEvent(State.Run.GameName, State.Run.CategoryName, splitNames, comparisons, State.AttemptStarted.Time);
+            string responseString = await response.Content.ReadAsStringAsync();
+            if (response.StatusCode == HttpStatusCode.OK)
+            {
+                try
+                {
+                    JObject responseObject = JObject.Parse(responseString);
+                    runID = responseObject.Value<int?>("runID");
+                    if (runID == null)
+                    {
+                        Console.Out.WriteLine("runID not an int");
+                    }
+                }
+                catch (Exception exc)
+                {
+                    Console.Out.WriteLine(exc.Message);
+                    Console.Out.WriteLine(responseString);
+                }
+            } else
+            {
+                Console.Out.WriteLine(response.StatusCode + " ERROR: " + responseString);
+            }
+            
+            
             Console.Out.WriteLine("OnStart");
         }
 
