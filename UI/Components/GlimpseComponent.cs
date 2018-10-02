@@ -113,10 +113,14 @@ namespace LiveSplit.UI.Components
                     }
                 }
             }
+
+            // send response
             HttpResponseMessage response = await Factory.PostGlimpseStartEvent(State.Run.GameName, State.Run.CategoryName, splitNames, comparisons, State.AttemptStarted.Time);
             string responseString = await response.Content.ReadAsStringAsync();
             if (response.StatusCode == HttpStatusCode.OK)
             {
+
+                // get run ID for future events
                 try
                 {
                     JObject responseObject = JObject.Parse(responseString);
@@ -135,7 +139,6 @@ namespace LiveSplit.UI.Components
             {
                 Console.Out.WriteLine(response.StatusCode + " ERROR: " + responseString);
             }
-            
             
             Console.Out.WriteLine("OnStart");
         }
