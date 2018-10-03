@@ -35,7 +35,8 @@ namespace LiveSplit.UI.Components
         public RequestFactory Factory;
 
         public int? runID;
-        public TimeSpan? lastSplitTime; // for calculating each split diffs
+        public TimeSpan? durationAtLastEvent; // for calculating each split diffs
+        public DateTime? timeOfLastEvent; // for calculating time from last split until reset
 
         public GlimpseComponent(LiveSplitState state)
         {
@@ -126,13 +127,14 @@ namespace LiveSplit.UI.Components
                 {
                     JObject responseObject = JObject.Parse(responseString);
 
-                    // set runID and initiate lastSplitTime for diff use
+                    // set runID and initiate durationAtLastEvent for diff use
                     runID = responseObject.Value<int?>("runID");
                     if (!runID.HasValue)
                     {
                         Console.Out.WriteLine("runID not an int");
                     }
-                    lastSplitTime = new TimeSpan();
+                    durationAtLastEvent = new TimeSpan();
+                    timeOfLastEvent = State.AttemptStarted.Time;
                 }
                 catch (Exception exc)
                 {
@@ -152,11 +154,14 @@ namespace LiveSplit.UI.Components
             {
                 DateTime eventTime = DateTime.UtcNow;
                 int completedSplitNumber = State.CurrentSplitIndex;
-                if (lastSplitTime.HasValue)
+                if (durationAtLastEvent.HasValue && State.CurrentTime.RealTime.HasValue)
                 {
-                    TimeSpan contributableDuration = State.CurrentAttemptDuration - lastSplitTime.Value;
-                    TimeSpan totalDuration = State.CurrentAttemptDuration;
-                    lastSplitTime = totalDuration;
+
+                    TimeSpan contributableDuration = State.CurrentTime.RealTime.Value - durationAtLastEvent.Value;
+                    TimeSpan totalDuration = State.CurrentTime.RealTime.Value;
+
+                    durationAtLastEvent = totalDuration;
+                    timeOfLastEvent = eventTime;
 
                     // check if its a mid-run split or a run ending
                     if (State.CurrentSplit != null) // mid-run
@@ -169,15 +174,34 @@ namespace LiveSplit.UI.Components
                 }
                 else
                 {
-                    Console.Out.WriteLine("No LastSplitTime.  Can't send event because we can't calculate contributableDuration");
+                    Console.Out.WriteLine("No durationAtLastEvent.  Can't send event because we can't calculate contributableDuration");
                 }
             }
-            Console.Out.WriteLine("OnSplit");
         }
 
-        private void State_OnReset(object sender, TimerPhase e)
+        private async void State_OnReset(object sender, TimerPhase e)
         {
-            Console.Out.WriteLine("OnReset");
+            // make sure we have a runID first and foremost
+            if (runID.HasValue)
+            {
+                DateTime eventTime = DateTime.UtcNow;
+                TimeSpan totalDuration = new TimeSpan();
+
+                // must calculate totalDuration ourselves because attemptduration is unreliable (different value depending on whether user saves best splits or not)
+                if (durationAtLastEvent.HasValue && timeOfLastEvent.HasValue)
+                {
+                    if (e == TimerPhase.Running)
+                    {
+                        totalDuration = durationAtLastEvent.Value + (DateTime.UtcNow - timeOfLastEvent.Value);
+                    }
+                    else
+                    {
+                        totalDuration = durationAtLastEvent.Value;
+                    }
+                } 
+
+                HttpResponseMessage response = await Factory.PostGlimpseRunFinalizeEvent(runID.Value, eventTime, totalDuration);
+            }
         }
 
         private void State_OnSkipSplit(object sender, EventArgs e)
@@ -190,14 +214,49 @@ namespace LiveSplit.UI.Components
             Console.Out.WriteLine("OnUndoSplit");
         }
 
-        private void State_OnPause(object sender, EventArgs e)
+        private async void State_OnPause(object sender, EventArgs e)
         {
-            Console.Out.WriteLine("OnPause");
+            // make sure we have a runID first and foremost
+            if (runID.HasValue)
+            {
+                DateTime eventTime = DateTime.UtcNow;
+                int completedSplitNumber = State.CurrentSplitIndex;
+                if (durationAtLastEvent.HasValue && State.CurrentTime.RealTime.HasValue)
+                {
+                    TimeSpan contributableDuration = State.CurrentTime.RealTime.Value - durationAtLastEvent.Value;
+                    TimeSpan totalDuration = State.CurrentTime.RealTime.Value;
+                    
+                    // update time and duration
+                    durationAtLastEvent = totalDuration;
+                    timeOfLastEvent = eventTime;
+
+                    HttpResponseMessage response = await Factory.PostGlimpseRunPauseEvent(runID.Value, eventTime, contributableDuration, totalDuration);
+                }
+                else
+                {
+                    Console.Out.WriteLine("No durationAtLastEvent.  Can't send event because we can't calculate contributableDuration");
+                }
+            }
         }
 
-        private void State_OnResume(object sender, EventArgs e)
+        private async void State_OnResume(object sender, EventArgs e)
         {
-            Console.Out.WriteLine("OnResume");
+            // make sure we have a runID first and foremost
+            if (runID.HasValue)
+            {
+                DateTime eventTime = DateTime.UtcNow;
+                TimeSpan totalDuration = new TimeSpan();
+                if (State.CurrentTime.RealTime.HasValue)
+                {
+                    totalDuration = State.CurrentTime.RealTime.Value;
+                }
+
+                // update time and duration
+                durationAtLastEvent = totalDuration;
+                timeOfLastEvent = eventTime;
+
+                HttpResponseMessage response = await Factory.PostGlimpseRunResumeEvent(runID.Value, eventTime, totalDuration);
+            }
         }
 
         private void State_OnUndoAllPauses(object sender, EventArgs e)

@@ -142,6 +142,33 @@ namespace LiveSplit.UI.Components
             return response;
         }
 
+        public async Task<HttpResponseMessage> PostGlimpseRunPauseEvent(int runID, DateTime eventTime, TimeSpan contributableDuration, TimeSpan totalDuration)
+        {
+            JObject requestContent = new JObject();
+            requestContent["type"] = "GlimpseRunPause";
+            requestContent["runID"] = runID;
+            requestContent["eventTime"] = eventTime.ToString("o");
+            requestContent["contributableDuration"] = contributableDuration.TotalMilliseconds;
+            requestContent["totalDuration"] = totalDuration.TotalMilliseconds;
+
+            HttpResponseMessage response = await PostGlimpseEvent(requestContent);
+
+            return response;
+        }
+
+        public async Task<HttpResponseMessage> PostGlimpseRunResumeEvent(int runID, DateTime eventTime, TimeSpan totalDuration)
+        {
+            JObject requestContent = new JObject();
+            requestContent["type"] = "GlimpseRunResume";
+            requestContent["runID"] = runID;
+            requestContent["eventTime"] = eventTime.ToString("o");
+            requestContent["totalDuration"] = totalDuration.TotalMilliseconds;
+
+            HttpResponseMessage response = await PostGlimpseEvent(requestContent);
+
+            return response;
+        }
+
         public async Task<HttpResponseMessage> PostGlimpseRunEndEvent(int runID, DateTime eventTime, int completedSplitNumber, TimeSpan contributableDuration, TimeSpan totalDuration)
         {
             JObject requestContent = new JObject();
@@ -157,7 +184,20 @@ namespace LiveSplit.UI.Components
             return response;
         }
 
-        private async Task<HttpResponseMessage> PostGlimpseEvent(JObject content)
+        public async Task<HttpResponseMessage> PostGlimpseRunFinalizeEvent(int runID, DateTime eventTime, TimeSpan totalDuration)
+        {
+            JObject requestContent = new JObject();
+            requestContent["type"] = "GlimpseRunFinalize";
+            requestContent["runID"] = runID;
+            requestContent["eventTime"] = eventTime.ToString("o");
+            requestContent["totalDuration"] = totalDuration.TotalMilliseconds;
+
+            HttpResponseMessage response = await PostGlimpseEvent(requestContent);
+
+            return response;
+        }
+
+        private async Task<HttpResponseMessage> PostGlimpseEvent(JObject content, int tries = 0)
         {
             // Make user request
             HttpRequestMessage userRequest = new HttpRequestMessage(HttpMethod.Post, BaseApiUrl + "event");
@@ -168,6 +208,18 @@ namespace LiveSplit.UI.Components
            
             userRequest.Content = new StringContent(JsonConvert.SerializeObject(content), Encoding.UTF8, "application/json");
             HttpResponseMessage response = await client.SendAsync(userRequest);
+
+            // only retry if 401 and we've tried less than 3 times and there's a refresh token
+            if (response.StatusCode == HttpStatusCode.Unauthorized && tries < 3 && RefreshToken != null)
+            {
+                if (await RefreshCredentials() == HttpStatusCode.OK)
+                {
+                    return await PostGlimpseEvent(content, tries + 1);
+                }
+            } else if (response.StatusCode != HttpStatusCode.OK)
+            {
+                Console.WriteLine(response.StatusCode + ": " + await response.Content.ReadAsStringAsync());
+            }
 
             return response;
         }
