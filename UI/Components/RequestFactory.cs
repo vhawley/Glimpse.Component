@@ -52,7 +52,10 @@ namespace LiveSplit.UI.Components
         {
             // Make refresh token request
             HttpRequestMessage userRequest = new HttpRequestMessage(HttpMethod.Post, BaseApiUrl + "refresh");
-            userRequest.Content = new StringContent(RefreshToken);
+            if (RefreshToken != null)
+            {
+                userRequest.Content = new StringContent(RefreshToken);
+            }
             HttpResponseMessage response = await client.SendAsync(userRequest);
 
             if (response.StatusCode == HttpStatusCode.OK)
@@ -79,7 +82,10 @@ namespace LiveSplit.UI.Components
         {
             // Make user request
             HttpRequestMessage userRequest = new HttpRequestMessage(HttpMethod.Get, BaseApiUrl + "user");
-            userRequest.Headers.Add("Authorization", "OAuth " + AccessToken);
+            if (AccessToken != null)
+            {
+                userRequest.Headers.Add("Authorization", "OAuth " + AccessToken);
+            }
             HttpResponseMessage response = await client.SendAsync(userRequest);
 
             if (response.StatusCode == HttpStatusCode.OK)
@@ -94,7 +100,9 @@ namespace LiveSplit.UI.Components
                     Console.Out.WriteLine(exc.Message);
                     return null;
                 }
-            } else if (response.StatusCode == HttpStatusCode.Unauthorized && tries < 3)
+            }
+            // only retry if 401 and we've tried less than 3 times and there's a refresh token
+            else if (response.StatusCode == HttpStatusCode.Unauthorized && tries < 3 && RefreshToken != null)
             {
                 if (await RefreshCredentials() == HttpStatusCode.OK)
                 {
@@ -104,7 +112,7 @@ namespace LiveSplit.UI.Components
             return null;
         }
 
-        public async Task<HttpResponseMessage> PostGlimpseStartEvent(string gameName, string categoryName, List<string> splitNames, JObject comparisons, DateTime startTime)
+        public async Task<HttpResponseMessage> PostGlimpseRunStartEvent(string gameName, string categoryName, List<string> splitNames, JObject comparisons, DateTime startTime)
         {
             JObject requestContent = new JObject();
             requestContent["type"] = "GlimpseRunStart";
@@ -119,11 +127,45 @@ namespace LiveSplit.UI.Components
             return response;
         }
 
+        public async Task<HttpResponseMessage> PostGlimpseRunSplitEvent(int runID, DateTime eventTime, int completedSplitNumber, TimeSpan contributableDuration, TimeSpan totalDuration)
+        {
+            JObject requestContent = new JObject();
+            requestContent["type"] = "GlimpseRunSplit";
+            requestContent["runID"] = runID;
+            requestContent["eventTime"] = eventTime.ToString("o");
+            requestContent["completedSplitNumber"] = completedSplitNumber;
+            requestContent["contributableDuration"] = contributableDuration.TotalMilliseconds;
+            requestContent["totalDuration"] = totalDuration.TotalMilliseconds;
+
+            HttpResponseMessage response = await PostGlimpseEvent(requestContent);
+
+            return response;
+        }
+
+        public async Task<HttpResponseMessage> PostGlimpseRunEndEvent(int runID, DateTime eventTime, int completedSplitNumber, TimeSpan contributableDuration, TimeSpan totalDuration)
+        {
+            JObject requestContent = new JObject();
+            requestContent["type"] = "GlimpseRunEnd";
+            requestContent["runID"] = runID;
+            requestContent["eventTime"] = eventTime.ToString("o");
+            requestContent["completedSplitNumber"] = completedSplitNumber;
+            requestContent["contributableDuration"] = contributableDuration.TotalMilliseconds;
+            requestContent["totalDuration"] = totalDuration.TotalMilliseconds;
+
+            HttpResponseMessage response = await PostGlimpseEvent(requestContent);
+
+            return response;
+        }
+
         private async Task<HttpResponseMessage> PostGlimpseEvent(JObject content)
         {
             // Make user request
             HttpRequestMessage userRequest = new HttpRequestMessage(HttpMethod.Post, BaseApiUrl + "event");
-            userRequest.Headers.Add("Authorization", "OAuth " + AccessToken);
+            if (AccessToken != null)
+            {
+                userRequest.Headers.Add("Authorization", "OAuth " + AccessToken);
+            }
+           
             userRequest.Content = new StringContent(JsonConvert.SerializeObject(content), Encoding.UTF8, "application/json");
             HttpResponseMessage response = await client.SendAsync(userRequest);
 

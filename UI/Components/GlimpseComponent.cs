@@ -35,6 +35,7 @@ namespace LiveSplit.UI.Components
         public RequestFactory Factory;
 
         public int? runID;
+        public TimeSpan? lastSplitTime; // for calculating each split diffs
 
         public GlimpseComponent(LiveSplitState state)
         {
@@ -115,7 +116,7 @@ namespace LiveSplit.UI.Components
             }
 
             // send response
-            HttpResponseMessage response = await Factory.PostGlimpseStartEvent(State.Run.GameName, State.Run.CategoryName, splitNames, comparisons, State.AttemptStarted.Time);
+            HttpResponseMessage response = await Factory.PostGlimpseRunStartEvent(State.Run.GameName, State.Run.CategoryName, splitNames, comparisons, State.AttemptStarted.Time);
             string responseString = await response.Content.ReadAsStringAsync();
             if (response.StatusCode == HttpStatusCode.OK)
             {
@@ -124,11 +125,14 @@ namespace LiveSplit.UI.Components
                 try
                 {
                     JObject responseObject = JObject.Parse(responseString);
+
+                    // set runID and initiate lastSplitTime for diff use
                     runID = responseObject.Value<int?>("runID");
-                    if (runID == null)
+                    if (!runID.HasValue)
                     {
                         Console.Out.WriteLine("runID not an int");
                     }
+                    lastSplitTime = new TimeSpan();
                 }
                 catch (Exception exc)
                 {
@@ -139,12 +143,35 @@ namespace LiveSplit.UI.Components
             {
                 Console.Out.WriteLine(response.StatusCode + " ERROR: " + responseString);
             }
-            
-            Console.Out.WriteLine("OnStart");
         }
 
-        private void State_OnSplit(object sender, EventArgs e)
+        private async void State_OnSplit(object sender, EventArgs e)
         {
+            // make sure we have a runID first and foremost
+            if (runID.HasValue)
+            {
+                DateTime eventTime = DateTime.UtcNow;
+                int completedSplitNumber = State.CurrentSplitIndex;
+                if (lastSplitTime.HasValue)
+                {
+                    TimeSpan contributableDuration = State.CurrentAttemptDuration - lastSplitTime.Value;
+                    TimeSpan totalDuration = State.CurrentAttemptDuration;
+                    lastSplitTime = totalDuration;
+
+                    // check if its a mid-run split or a run ending
+                    if (State.CurrentSplit != null) // mid-run
+                    {
+                        HttpResponseMessage response = await Factory.PostGlimpseRunSplitEvent(runID.Value, eventTime, completedSplitNumber, contributableDuration, totalDuration);
+                    } else
+                    {
+                        HttpResponseMessage response = await Factory.PostGlimpseRunEndEvent(runID.Value, eventTime, completedSplitNumber, contributableDuration, totalDuration);
+                    }
+                }
+                else
+                {
+                    Console.Out.WriteLine("No LastSplitTime.  Can't send event because we can't calculate contributableDuration");
+                }
+            }
             Console.Out.WriteLine("OnSplit");
         }
 
