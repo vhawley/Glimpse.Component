@@ -14,102 +14,24 @@ namespace LiveSplit.UI.Components
     {
 
         private static readonly HttpClient client = new HttpClient();
-        private string AccessToken;
-        private string RefreshToken;
-        private string IdToken;
+        private string GlimpseKey;
         private static string BaseApiUrl = "https://api.dev.glimpsesr.com/";
 
         public RequestFactory() { }
 
-        public RequestFactory(string accessToken, string refreshToken, string idToken)
+        public RequestFactory(string glimpseKey)
         {
-            SetCredentials(accessToken, refreshToken, idToken);
+            SetCredentials(glimpseKey);
         }
 
-        public void SetCredentials(string accessToken, string refreshToken, string idToken)
+        public void SetCredentials(string glimpseKey)
         {
-            AccessToken = accessToken;
-            RefreshToken = refreshToken;
-            IdToken = idToken;
+            GlimpseKey = glimpseKey;
         }
 
-        public string GetAccessToken()
+        public string GetGlimpseKey()
         {
-            return AccessToken;
-        }
-
-        public string GetRefreshToken()
-        {
-            return RefreshToken;
-        }
-
-        public string GetIdToken()
-        {
-            return IdToken;
-        }
-
-        private async Task<HttpStatusCode> RefreshCredentials()
-        {
-            // Make refresh token request
-            HttpRequestMessage userRequest = new HttpRequestMessage(HttpMethod.Post, BaseApiUrl + "refresh");
-            if (RefreshToken != null)
-            {
-                userRequest.Content = new StringContent(RefreshToken);
-            }
-            HttpResponseMessage response = await client.SendAsync(userRequest);
-
-            if (response.StatusCode == HttpStatusCode.OK)
-            {
-                try
-                {
-                    JObject creds = JObject.Parse(await response.Content.ReadAsStringAsync());
-                    string accessToken = creds.Value<string>("access_token");
-                    string refreshToken = creds.Value<string>("refresh_token");
-                    AccessToken = accessToken;
-                    RefreshToken = refreshToken;
-                } catch (Exception exc)
-                {
-                    Console.Out.WriteLine(exc.Message);
-                }
-            } else
-            {
-                Console.Out.WriteLine(await response.Content.ReadAsStringAsync());
-            }
-            return response.StatusCode;
-        }
-
-        public async Task<string> GetDisplayName(int tries = 0)
-        {
-            // Make user request
-            HttpRequestMessage userRequest = new HttpRequestMessage(HttpMethod.Get, BaseApiUrl + "user");
-            if (AccessToken != null)
-            {
-                userRequest.Headers.Add("Authorization", "OAuth " + AccessToken);
-            }
-            HttpResponseMessage response = await client.SendAsync(userRequest);
-
-            if (response.StatusCode == HttpStatusCode.OK)
-            {
-                try
-                {
-                    JObject userJson = JObject.Parse(await response.Content.ReadAsStringAsync());
-                    return userJson.Value<string>("displayName");
-                }
-                catch (Exception exc)
-                {
-                    Console.Out.WriteLine(exc.Message);
-                    return null;
-                }
-            }
-            // only retry if 401 and we've tried less than 3 times and there's a refresh token
-            else if (response.StatusCode == HttpStatusCode.Unauthorized && tries < 3 && RefreshToken != null)
-            {
-                if (await RefreshCredentials() == HttpStatusCode.OK)
-                {
-                    return await GetDisplayName(tries + 1);
-                }
-            }
-            return null;
+            return GlimpseKey;
         }
 
         public async Task<HttpResponseMessage> PostGlimpseRunStartEvent(string gameName, string categoryName, List<string> splitNames, JObject comparisons, DateTime startTime)
@@ -201,21 +123,18 @@ namespace LiveSplit.UI.Components
         {
             // Make user request
             HttpRequestMessage userRequest = new HttpRequestMessage(HttpMethod.Post, BaseApiUrl + "event");
-            if (AccessToken != null)
+            if (GlimpseKey != null && !GlimpseKey.Equals(""))
             {
-                userRequest.Headers.Add("Authorization", "OAuth " + AccessToken);
+                userRequest.Headers.Add("Authorization", GlimpseKey);
             }
            
             userRequest.Content = new StringContent(JsonConvert.SerializeObject(content), Encoding.UTF8, "application/json");
             HttpResponseMessage response = await client.SendAsync(userRequest);
 
             // only retry if 401 and we've tried less than 3 times and there's a refresh token
-            if (response.StatusCode == HttpStatusCode.Unauthorized && tries < 3 && RefreshToken != null)
+            if (response.StatusCode != HttpStatusCode.OK && tries < 3 && GlimpseKey != null)
             {
-                if (await RefreshCredentials() == HttpStatusCode.OK)
-                {
-                    return await PostGlimpseEvent(content, tries + 1);
-                }
+                return await PostGlimpseEvent(content, tries + 1);
             } else if (response.StatusCode != HttpStatusCode.OK)
             {
                 Console.WriteLine(response.StatusCode + ": " + await response.Content.ReadAsStringAsync());
