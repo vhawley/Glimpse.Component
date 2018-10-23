@@ -15,7 +15,7 @@ namespace LiveSplit.UI.Components
 
         private static readonly HttpClient client = new HttpClient();
         private string GlimpseKey;
-        private static string BaseApiUrl = "https://api.dev.glimpsesr.com/";
+        private static string BaseApiUrl = "http://192.168.50.127:8080/";
 
         public RequestFactory() { }
 
@@ -49,7 +49,7 @@ namespace LiveSplit.UI.Components
             return response;
         }
 
-        public async Task<HttpResponseMessage> PostGlimpseRunSplitEvent(int runID, DateTime eventTime, int completedSplitNumber, TimeSpan contributableDuration, TimeSpan totalDuration)
+        public async Task<HttpResponseMessage> PostGlimpseRunSplitEvent(long runID, DateTime eventTime, int completedSplitNumber, TimeSpan contributableDuration, TimeSpan totalDuration)
         {
             JObject requestContent = new JObject();
             requestContent["type"] = "GlimpseRunSplit";
@@ -64,7 +64,7 @@ namespace LiveSplit.UI.Components
             return response;
         }
 
-        public async Task<HttpResponseMessage> PostGlimpseRunPauseEvent(int runID, DateTime eventTime, TimeSpan contributableDuration, TimeSpan totalDuration)
+        public async Task<HttpResponseMessage> PostGlimpseRunPauseEvent(long runID, DateTime eventTime, TimeSpan contributableDuration, TimeSpan totalDuration)
         {
             JObject requestContent = new JObject();
             requestContent["type"] = "GlimpseRunPause";
@@ -78,7 +78,7 @@ namespace LiveSplit.UI.Components
             return response;
         }
 
-        public async Task<HttpResponseMessage> PostGlimpseRunResumeEvent(int runID, DateTime eventTime, TimeSpan totalDuration)
+        public async Task<HttpResponseMessage> PostGlimpseRunResumeEvent(long runID, DateTime eventTime, TimeSpan totalDuration)
         {
             JObject requestContent = new JObject();
             requestContent["type"] = "GlimpseRunResume";
@@ -91,7 +91,33 @@ namespace LiveSplit.UI.Components
             return response;
         }
 
-        public async Task<HttpResponseMessage> PostGlimpseRunEndEvent(int runID, DateTime eventTime, int completedSplitNumber, TimeSpan contributableDuration, TimeSpan totalDuration)
+        public async Task<HttpResponseMessage> PostGlimpseRunSplitSkipEvent(long runID, DateTime eventTime, TimeSpan totalDuration)
+        {
+            JObject requestContent = new JObject();
+            requestContent["type"] = "GlimpseRunSplitSkip";
+            requestContent["runID"] = runID;
+            requestContent["eventTime"] = eventTime.ToString("o");
+            requestContent["totalDuration"] = totalDuration.TotalMilliseconds;
+
+            HttpResponseMessage response = await PostGlimpseEvent(requestContent);
+
+            return response;
+        }
+
+        public async Task<HttpResponseMessage> PostGlimpseRunSplitUndoEvent(long runID, DateTime eventTime, TimeSpan totalDuration)
+        {
+            JObject requestContent = new JObject();
+            requestContent["type"] = "GlimpseRunSplitUndo";
+            requestContent["runID"] = runID;
+            requestContent["eventTime"] = eventTime.ToString("o");
+            requestContent["totalDuration"] = totalDuration.TotalMilliseconds;
+
+            HttpResponseMessage response = await PostGlimpseEvent(requestContent);
+
+            return response;
+        }
+
+        public async Task<HttpResponseMessage> PostGlimpseRunEndEvent(long runID, DateTime eventTime, int completedSplitNumber, TimeSpan contributableDuration, TimeSpan totalDuration)
         {
             JObject requestContent = new JObject();
             requestContent["type"] = "GlimpseRunEnd";
@@ -106,7 +132,7 @@ namespace LiveSplit.UI.Components
             return response;
         }
 
-        public async Task<HttpResponseMessage> PostGlimpseRunFinalizeEvent(int runID, DateTime eventTime, TimeSpan totalDuration)
+        public async Task<HttpResponseMessage> PostGlimpseRunFinalizeEvent(long runID, DateTime eventTime, TimeSpan totalDuration)
         {
             JObject requestContent = new JObject();
             requestContent["type"] = "GlimpseRunFinalize";

@@ -34,7 +34,7 @@ namespace LiveSplit.UI.Components
 
         public RequestFactory Factory;
 
-        public int? runID;
+        public long? runID;
         public TimeSpan? durationAtLastEvent; // for calculating each split diffs
         public DateTime? timeOfLastEvent; // for calculating time from last split until reset
 
@@ -127,19 +127,11 @@ namespace LiveSplit.UI.Components
                     // get run ID for future events
                     try
                     {
-                        JObject responseObject = JObject.Parse(responseString);
-
                         // set runID and initiate durationAtLastEvent for diff use
-                        runID = responseObject.Value<int?>("runID");
-                        if (!runID.HasValue)
-                        {
-                            Console.Out.WriteLine("runID not an int");
-                        } else
-                        {
-                            Console.Out.WriteLine(runID);
-                            durationAtLastEvent = new TimeSpan();
-                            timeOfLastEvent = State.AttemptStarted.Time;
-                        }
+                        runID = Int64.Parse(responseString);
+                        Console.Out.WriteLine(runID);
+                        durationAtLastEvent = new TimeSpan();
+                        timeOfLastEvent = State.AttemptStarted.Time;
                     }
                     catch (Exception exc)
                     {
@@ -230,14 +222,44 @@ namespace LiveSplit.UI.Components
             
         }
 
-        private void State_OnSkipSplit(object sender, EventArgs e)
+        private async void State_OnSkipSplit(object sender, EventArgs e)
         {
-            Console.Out.WriteLine("OnSkipSplit");
+            try
+            {
+                // make sure we have a runID first and foremost
+                if (runID.HasValue)
+                {
+                    TimeSpan totalDuration = State.CurrentTime.RealTime.Value;
+                    DateTime eventTime = DateTime.UtcNow;
+
+                    // don't update duration at last event because time between this event and last event isn't contributable
+                    HttpResponseMessage response = await Factory.PostGlimpseRunSplitSkipEvent(runID.Value, eventTime, totalDuration);
+                }
+            }
+            catch (Exception exc)
+            {
+                Console.Out.WriteLine(exc.Message);
+            }
         }
 
-        private void State_OnUndoSplit(object sender, EventArgs e)
+        private async void State_OnUndoSplit(object sender, EventArgs e)
         {
-            Console.Out.WriteLine("OnUndoSplit");
+            try
+            {
+                // make sure we have a runID first and foremost
+                if (runID.HasValue)
+                {
+                    TimeSpan totalDuration = State.CurrentTime.RealTime.Value;
+                    DateTime eventTime = DateTime.UtcNow;
+
+                    // don't update duration at last event because time between this event and last event isn't contributable
+                    HttpResponseMessage response = await Factory.PostGlimpseRunSplitUndoEvent(runID.Value, eventTime, totalDuration);
+                }
+            }
+            catch (Exception exc)
+            {
+                Console.Out.WriteLine(exc.Message);
+            }
         }
 
         private async void State_OnPause(object sender, EventArgs e)
