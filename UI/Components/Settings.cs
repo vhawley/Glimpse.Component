@@ -15,6 +15,7 @@ namespace LiveSplit.UI.Components
         {
             InitializeComponent();
             Factory = factory;
+            keyTextBox.DataBindings.Add("Text", Factory, "GlimpseKey", false, DataSourceUpdateMode.OnPropertyChanged);
         }
 
         public XmlNode GetSettings(XmlDocument document)
@@ -41,7 +42,7 @@ namespace LiveSplit.UI.Components
             string glimpseKey = SettingsHelper.ParseString(settings["GlimpseKey"]);
 
             // it's ok if they're null
-            Factory.SetCredentials(glimpseKey);
+            Factory.GlimpseKey = glimpseKey;
             
         }
     }

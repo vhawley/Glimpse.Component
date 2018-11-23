@@ -14,17 +14,12 @@ namespace LiveSplit.UI.Components
     {
 
         private static readonly HttpClient client = new HttpClient();
-        private string GlimpseKey;
-        private static string BaseApiUrl = "http://192.168.50.127:8080/";
+        public string GlimpseKey { get; set; }
+        private static string BaseApiUrl = "http://10.211.55.2:8080/";
 
         public RequestFactory() { }
 
         public RequestFactory(string glimpseKey)
-        {
-            SetCredentials(glimpseKey);
-        }
-
-        public void SetCredentials(string glimpseKey)
         {
             GlimpseKey = glimpseKey;
         }
