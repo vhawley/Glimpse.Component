@@ -15,7 +15,7 @@ namespace LiveSplit.UI.Components
 
         private static readonly HttpClient client = new HttpClient();
         public string GlimpseKey { get; set; }
-        private static string BaseApiUrl = "http://10.211.55.2:8080/";
+        private static string BaseApiUrl = "https://api.glimpsesr.com/";
 
         public RequestFactory() { }
 
