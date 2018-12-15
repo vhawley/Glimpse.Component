@@ -1,12 +1,10 @@
-﻿using Newtonsoft.Json.Linq;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net.Http;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
+using System.Web.Script.Serialization;
 
 namespace LiveSplit.UI.Components
 {
@@ -29,13 +27,13 @@ namespace LiveSplit.UI.Components
             return GlimpseKey;
         }
 
-        public async Task<HttpResponseMessage> PostGlimpseRunStartEvent(string gameName, string categoryName, List<string> splitNames, JObject comparisons, DateTime startTime)
+        public async Task<HttpResponseMessage> PostGlimpseRunStartEvent(string gameName, string categoryName, List<string> splitNames, Dictionary<string, List<double?>> comparisons, DateTime startTime)
         {
-            JObject requestContent = new JObject();
+            Dictionary<string, object> requestContent = new Dictionary<string, object>();
             requestContent["type"] = "GlimpseRunStart";
             requestContent["gameName"] = gameName;
             requestContent["categoryName"] = categoryName;
-            requestContent["splitNames"] = JArray.FromObject(splitNames);
+            requestContent["splitNames"] = splitNames;
             requestContent["comparisons"] = comparisons;
             requestContent["startTime"] = startTime.ToString("o");
 
@@ -46,7 +44,7 @@ namespace LiveSplit.UI.Components
 
         public async Task<HttpResponseMessage> PostGlimpseRunSplitEvent(long runID, DateTime eventTime, int completedSplitNumber, TimeSpan contributableDuration, TimeSpan totalDuration)
         {
-            JObject requestContent = new JObject();
+            Dictionary<string, object> requestContent = new Dictionary<string, object>();
             requestContent["type"] = "GlimpseRunSplit";
             requestContent["runID"] = runID;
             requestContent["eventTime"] = eventTime.ToString("o");
@@ -61,7 +59,7 @@ namespace LiveSplit.UI.Components
 
         public async Task<HttpResponseMessage> PostGlimpseRunPauseEvent(long runID, DateTime eventTime, TimeSpan contributableDuration, TimeSpan totalDuration)
         {
-            JObject requestContent = new JObject();
+            Dictionary<string, object> requestContent = new Dictionary<string, object>();
             requestContent["type"] = "GlimpseRunPause";
             requestContent["runID"] = runID;
             requestContent["eventTime"] = eventTime.ToString("o");
@@ -75,7 +73,7 @@ namespace LiveSplit.UI.Components
 
         public async Task<HttpResponseMessage> PostGlimpseRunResumeEvent(long runID, DateTime eventTime, TimeSpan totalDuration)
         {
-            JObject requestContent = new JObject();
+            Dictionary<string, object> requestContent = new Dictionary<string, object>();
             requestContent["type"] = "GlimpseRunResume";
             requestContent["runID"] = runID;
             requestContent["eventTime"] = eventTime.ToString("o");
@@ -88,7 +86,7 @@ namespace LiveSplit.UI.Components
 
         public async Task<HttpResponseMessage> PostGlimpseRunSplitSkipEvent(long runID, DateTime eventTime, TimeSpan totalDuration)
         {
-            JObject requestContent = new JObject();
+            Dictionary<string, object> requestContent = new Dictionary<string, object>();
             requestContent["type"] = "GlimpseRunSplitSkip";
             requestContent["runID"] = runID;
             requestContent["eventTime"] = eventTime.ToString("o");
@@ -101,7 +99,7 @@ namespace LiveSplit.UI.Components
 
         public async Task<HttpResponseMessage> PostGlimpseRunSplitUndoEvent(long runID, DateTime eventTime, TimeSpan totalDuration)
         {
-            JObject requestContent = new JObject();
+            Dictionary<string, object> requestContent = new Dictionary<string, object>();
             requestContent["type"] = "GlimpseRunSplitUndo";
             requestContent["runID"] = runID;
             requestContent["eventTime"] = eventTime.ToString("o");
@@ -114,7 +112,7 @@ namespace LiveSplit.UI.Components
 
         public async Task<HttpResponseMessage> PostGlimpseRunEndEvent(long runID, DateTime eventTime, int completedSplitNumber, TimeSpan contributableDuration, TimeSpan totalDuration)
         {
-            JObject requestContent = new JObject();
+            Dictionary<string, object> requestContent = new Dictionary<string, object>();
             requestContent["type"] = "GlimpseRunEnd";
             requestContent["runID"] = runID;
             requestContent["eventTime"] = eventTime.ToString("o");
@@ -129,7 +127,7 @@ namespace LiveSplit.UI.Components
 
         public async Task<HttpResponseMessage> PostGlimpseRunFinalizeEvent(long runID, DateTime eventTime, TimeSpan totalDuration)
         {
-            JObject requestContent = new JObject();
+            Dictionary<string, object> requestContent = new Dictionary<string, object>();
             requestContent["type"] = "GlimpseRunFinalize";
             requestContent["runID"] = runID;
             requestContent["eventTime"] = eventTime.ToString("o");
@@ -140,7 +138,7 @@ namespace LiveSplit.UI.Components
             return response;
         }
 
-        private async Task<HttpResponseMessage> PostGlimpseEvent(JObject content, int tries = 0)
+        private async Task<HttpResponseMessage> PostGlimpseEvent(Dictionary<string, object> content, int tries = 0)
         {
             // Make user request
             HttpRequestMessage userRequest = new HttpRequestMessage(HttpMethod.Post, BaseApiUrl + "event");
@@ -148,8 +146,11 @@ namespace LiveSplit.UI.Components
             {
                 userRequest.Headers.Add("Authorization", GlimpseKey);
             }
-           
-            userRequest.Content = new StringContent(JsonConvert.SerializeObject(content), Encoding.UTF8, "application/json");
+
+            // serialize post object
+            JavaScriptSerializer serializer = new JavaScriptSerializer();
+            string contentString = serializer.Serialize(content);
+            userRequest.Content = new StringContent(contentString, Encoding.UTF8, "application/json");
             HttpResponseMessage response = await client.SendAsync(userRequest);
 
             // only retry if 401 and we've tried less than 3 times and there's a refresh token

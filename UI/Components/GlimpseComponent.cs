@@ -1,16 +1,9 @@
 ﻿using LiveSplit.Model;
-using LiveSplit.Options;
-using LiveSplit.TimeFormatters;
-using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
-using System.IO;
-using System.IO.Pipes;
-using System.Linq;
 using System.Net;
 using System.Net.Http;
-using System.Net.Sockets;
 using System.Windows.Forms;
 using System.Xml;
 
@@ -74,7 +67,7 @@ namespace LiveSplit.UI.Components
         {
             try
             {
-                JObject comparisons = new JObject();
+                Dictionary<string,List<double?>> comparisons = new Dictionary<string, List<double?>>();
                 List<string> splitNames = new List<string>();
 
                 // object to store last comparison time values for each comparison type 
@@ -92,11 +85,10 @@ namespace LiveSplit.UI.Components
                     foreach (string key in s.Comparisons.Keys)
                     {
                         // create array for this comparison if it doesn't exist
-                        if (comparisons[key] == null)
+                        if (!comparisons.ContainsKey(key))
                         {
-                            comparisons[key] = new JArray();
+                            comparisons[key] = new List<double?>();
                         }
-                        JArray comparisonsArray = (JArray)comparisons[key];
 
                         // create double for last comparison value if it doesn't exist
                         if (!lasts.ContainsKey(key))
@@ -108,11 +100,11 @@ namespace LiveSplit.UI.Components
                         TimeSpan? comparisonTime = s.Comparisons[key].RealTime;
                         try
                         {
-                            comparisonsArray.Add(comparisonTime.Value.TotalMilliseconds - lasts[key]);
+                            comparisons[key].Add(comparisonTime.Value.TotalMilliseconds - lasts[key].Value);
                             lasts[key] = comparisonTime.Value.TotalMilliseconds;
                         } catch (Exception exc)
                         {
-                            comparisonsArray.Add(null);
+                            comparisons[key].Add(null);
                             Console.Out.WriteLine(exc.Message);
                         }
                     }

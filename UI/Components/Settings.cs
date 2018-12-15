@@ -1,9 +1,6 @@
-﻿using Newtonsoft.Json.Linq;
-using System;
+﻿using System;
 using System.Windows.Forms;
 using System.Xml;
-using System.Net.Http;
-using System.Threading.Tasks;
 
 namespace LiveSplit.UI.Components
 {
