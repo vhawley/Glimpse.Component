@@ -8,11 +8,15 @@ namespace LiveSplit.UI.Components
     {
         private RequestFactory Factory;
 
+        // public bool SendAfterFirstSplit { get; set; }
+
         public Settings(RequestFactory factory)
         {
             InitializeComponent();
             Factory = factory;
+            // SendAfterFirstSplit = false;
             keyTextBox.DataBindings.Add("Text", Factory, "GlimpseKey", false, DataSourceUpdateMode.OnPropertyChanged);
+            // sendAfterFirstSplitCheckbox.DataBindings.Add("Checked", this, "SendAfterFirstSplit", false, DataSourceUpdateMode.OnPropertyChanged);
         }
 
         public XmlNode GetSettings(XmlDocument document)
@@ -30,6 +34,7 @@ namespace LiveSplit.UI.Components
 
         private int CreateSettingsNode(XmlDocument document, XmlElement parent)
         {
+            // SettingsHelper.CreateSetting(document, parent, "SendAfterFirstSplit", sendAfterFirstSplitCheckbox.Checked);
             return SettingsHelper.CreateSetting(document, parent, "GlimpseKey", keyTextBox.Text);
         }
 
@@ -37,10 +42,10 @@ namespace LiveSplit.UI.Components
         {
             Console.Out.WriteLine("SetSettings");
             string glimpseKey = SettingsHelper.ParseString(settings["GlimpseKey"]);
+            // SendAfterFirstSplit = SettingsHelper.ParseBool(settings["SendAfterFirstSplit"], false);
 
             // it's ok if they're null
             Factory.GlimpseKey = glimpseKey;
-            
         }
     }
 }

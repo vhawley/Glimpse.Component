@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Net;
 using System.Net.Http;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Xml;
 
@@ -27,6 +28,7 @@ namespace LiveSplit.UI.Components
 
         public RequestFactory Factory;
 
+        public bool GlimpseEnabled; // default to true
         public long? runID;
         public TimeSpan? durationAtLastEvent; // for calculating each split diffs
         public DateTime? timeOfLastEvent; // for calculating time from last split until reset
@@ -37,7 +39,8 @@ namespace LiveSplit.UI.Components
             Settings = new Settings(Factory);
 
             ContextMenuControls = new Dictionary<string, Action>();
-            ContextMenuControls.Add("Glimpse Settings", OpenGlimpseSettings);
+            ContextMenuControls.Add("Disable Glimpse", DisableGlimpse);
+            GlimpseEnabled = true;
 
             State = state;
             Form = state.Form;
@@ -58,16 +61,35 @@ namespace LiveSplit.UI.Components
             
         }
         
-        public void OpenGlimpseSettings()
+        public void DisableGlimpse()
         {
-            Console.Out.WriteLine("OpenGlimpseSettings");
+            GlimpseEnabled = false;
+            ContextMenuControls.Clear();
+            ContextMenuControls.Add("Enable Glimpse", EnableGlimpse);
+            Console.Out.WriteLine("DisableGlimpse");
         }
 
-        private async void State_OnStart(object sender, EventArgs e)
+        public void EnableGlimpse()
+        {
+            GlimpseEnabled = true;
+            ContextMenuControls.Clear();
+            ContextMenuControls.Add("Disable Glimpse", DisableGlimpse);
+            Console.Out.WriteLine("EnableGlimpse");
+        }
+
+        private void ClearGlimpseState()
+        {
+            runID = null;
+            durationAtLastEvent = null;
+            timeOfLastEvent = null;
+        }
+
+        private async void SendRunStartEvent()
         {
             try
             {
-                Dictionary<string,List<double?>> comparisons = new Dictionary<string, List<double?>>();
+                ClearGlimpseState();
+                Dictionary<string, List<double?>> comparisons = new Dictionary<string, List<double?>>();
                 List<string> splitNames = new List<string>();
 
                 // object to store last comparison time values for each comparison type 
@@ -76,7 +98,7 @@ namespace LiveSplit.UI.Components
                 // go through run to get split names and comparisons; for each segment in run
                 for (int i = 0; i < State.Run.Count; i++) // need i for index of comparisons object
                 {
-                    Segment s = (Segment) State.Run[i];
+                    Segment s = (Segment)State.Run[i];
 
                     // add to splitnames
                     splitNames.Add(s.Name);
@@ -102,7 +124,8 @@ namespace LiveSplit.UI.Components
                         {
                             comparisons[key].Add(comparisonTime.Value.TotalMilliseconds - lasts[key].Value);
                             lasts[key] = comparisonTime.Value.TotalMilliseconds;
-                        } catch (Exception exc)
+                        }
+                        catch (Exception exc)
                         {
                             comparisons[key].Add(null);
                             Console.Out.WriteLine(exc.Message);
@@ -130,7 +153,8 @@ namespace LiveSplit.UI.Components
                         Console.Out.WriteLine(exc.Message);
                         Console.Out.WriteLine(responseString);
                     }
-                } else
+                }
+                else
                 {
                     Console.Out.WriteLine(response.StatusCode + " ERROR: " + responseString);
                 }
@@ -140,9 +164,10 @@ namespace LiveSplit.UI.Components
             {
                 Console.Out.WriteLine(exc.Message);
             }
+
         }
 
-        private async void State_OnSplit(object sender, EventArgs e)
+        private async void SendRunSplitEvent()
         {
             try
             {
@@ -175,14 +200,15 @@ namespace LiveSplit.UI.Components
                         Console.Out.WriteLine("No durationAtLastEvent.  Can't send event because we can't calculate contributableDuration");
                     }
                 }
-            } catch (Exception exc)
+            }
+            catch (Exception exc)
             {
                 Console.Out.WriteLine(exc.Message);
             }
-            
+
         }
 
-        private async void State_OnReset(object sender, TimerPhase e)
+        private async void SendRunResetEvent(TimerPhase phase)
         {
             try
             {
@@ -195,7 +221,7 @@ namespace LiveSplit.UI.Components
                     // must calculate totalDuration ourselves because attemptduration is unreliable (different value depending on whether user saves best splits or not)
                     if (durationAtLastEvent.HasValue && timeOfLastEvent.HasValue)
                     {
-                        if (e == TimerPhase.Running)
+                        if (phase == TimerPhase.Running)
                         {
                             totalDuration = durationAtLastEvent.Value + (DateTime.UtcNow - timeOfLastEvent.Value);
                         }
@@ -207,14 +233,15 @@ namespace LiveSplit.UI.Components
 
                     HttpResponseMessage response = await Factory.PostGlimpseRunFinalizeEvent(runID.Value, eventTime, totalDuration);
                 }
-            } catch (Exception exc)
+            }
+            catch (Exception exc)
             {
                 Console.Out.WriteLine(exc.Message);
             }
-            
+
         }
 
-        private async void State_OnSkipSplit(object sender, EventArgs e)
+        private async void SendRunSkipEvent()
         {
             try
             {
@@ -234,7 +261,7 @@ namespace LiveSplit.UI.Components
             }
         }
 
-        private async void State_OnUndoSplit(object sender, EventArgs e)
+        private async void SendRunUndoEvent()
         {
             try
             {
@@ -254,7 +281,7 @@ namespace LiveSplit.UI.Components
             }
         }
 
-        private async void State_OnPause(object sender, EventArgs e)
+        private async void SendRunPauseEvent()
         {
             try
             {
@@ -279,14 +306,14 @@ namespace LiveSplit.UI.Components
                         Console.Out.WriteLine("No durationAtLastEvent.  Can't send event because we can't calculate contributableDuration");
                     }
                 }
-            } catch (Exception exc)
+            }
+            catch (Exception exc)
             {
                 Console.Out.WriteLine(exc.Message);
             }
-            
         }
 
-        private async void State_OnResume(object sender, EventArgs e)
+        private async void SendRunResumeEvent()
         {
             try
             {
@@ -306,11 +333,49 @@ namespace LiveSplit.UI.Components
 
                     HttpResponseMessage response = await Factory.PostGlimpseRunResumeEvent(runID.Value, eventTime, totalDuration);
                 }
-            } catch (Exception exc)
+            }
+            catch (Exception exc)
             {
                 Console.Out.WriteLine(exc.Message);
             }
-            
+        }
+
+        private void State_OnStart(object sender, EventArgs e)
+        {
+            if (GlimpseEnabled)
+            {
+                SendRunStartEvent();
+            }
+        }
+
+        private void State_OnSplit(object sender, EventArgs e)
+        {
+            SendRunSplitEvent();
+        }
+
+        private void State_OnReset(object sender, TimerPhase e)
+        {
+            SendRunResetEvent(e);
+        }
+
+        private void State_OnSkipSplit(object sender, EventArgs e)
+        {
+            SendRunSkipEvent();
+        }
+
+        private void State_OnUndoSplit(object sender, EventArgs e)
+        {
+            SendRunUndoEvent();
+        }
+
+        private void State_OnPause(object sender, EventArgs e)
+        {
+            SendRunPauseEvent();
+        }
+
+        private void State_OnResume(object sender, EventArgs e)
+        {
+            SendRunResumeEvent();
         }
 
         private void State_OnUndoAllPauses(object sender, EventArgs e)
