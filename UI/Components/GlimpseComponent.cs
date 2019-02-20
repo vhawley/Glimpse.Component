@@ -128,7 +128,7 @@ namespace LiveSplit.UI.Components
                         catch (Exception exc)
                         {
                             comparisons[key].Add(null);
-                            Console.Out.WriteLine(exc.Message);
+                            await Factory.LogToGlimpse(exc.Message);
                         }
                     }
                 }
@@ -150,19 +150,18 @@ namespace LiveSplit.UI.Components
                     }
                     catch (Exception exc)
                     {
-                        Console.Out.WriteLine(exc.Message);
-                        Console.Out.WriteLine(responseString);
+                        await Factory.LogToGlimpse(exc.Message + "\n" + responseString);
                     }
                 }
                 else
                 {
-                    Console.Out.WriteLine(response.StatusCode + " ERROR: " + responseString);
+                    await Factory.LogToGlimpse(response.StatusCode + " ERROR: " + responseString);
                 }
 
             }
             catch (Exception exc)
             {
-                Console.Out.WriteLine(exc.Message);
+                await Factory.LogToGlimpse(exc.Message);
             }
 
         }
@@ -197,13 +196,13 @@ namespace LiveSplit.UI.Components
                     }
                     else
                     {
-                        Console.Out.WriteLine("No durationAtLastEvent.  Can't send event because we can't calculate contributableDuration");
+                        await Factory.LogToGlimpse("Run: " + runID.Value + "; No durationAtLastEvent.  Can't send event because we can't calculate contributableDuration");
                     }
                 }
             }
             catch (Exception exc)
             {
-                Console.Out.WriteLine(exc.Message);
+                await Factory.LogToGlimpse(exc.Message);
             }
 
         }
@@ -236,7 +235,7 @@ namespace LiveSplit.UI.Components
             }
             catch (Exception exc)
             {
-                Console.Out.WriteLine(exc.Message);
+                await Factory.LogToGlimpse(exc.Message);
             }
 
         }
@@ -257,7 +256,7 @@ namespace LiveSplit.UI.Components
             }
             catch (Exception exc)
             {
-                Console.Out.WriteLine(exc.Message);
+                await Factory.LogToGlimpse(exc.Message);
             }
         }
 
@@ -277,7 +276,7 @@ namespace LiveSplit.UI.Components
             }
             catch (Exception exc)
             {
-                Console.Out.WriteLine(exc.Message);
+                await Factory.LogToGlimpse(exc.Message);
             }
         }
 
@@ -303,13 +302,13 @@ namespace LiveSplit.UI.Components
                     }
                     else
                     {
-                        Console.Out.WriteLine("No durationAtLastEvent.  Can't send event because we can't calculate contributableDuration");
+                        await Factory.LogToGlimpse("Run: " + runID.Value + "; No durationAtLastEvent.  Can't send event because we can't calculate contributableDuration");
                     }
                 }
             }
             catch (Exception exc)
             {
-                Console.Out.WriteLine(exc.Message);
+                await Factory.LogToGlimpse(exc.Message);
             }
         }
 
@@ -336,7 +335,7 @@ namespace LiveSplit.UI.Components
             }
             catch (Exception exc)
             {
-                Console.Out.WriteLine(exc.Message);
+                await Factory.LogToGlimpse(exc.Message);
             }
         }
 

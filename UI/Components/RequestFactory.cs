@@ -159,11 +159,20 @@ namespace LiveSplit.UI.Components
                 return await PostGlimpseEvent(content, tries + 1);
             } else if (response.StatusCode != HttpStatusCode.OK)
             {
-                Console.WriteLine(response.StatusCode + ": " + await response.Content.ReadAsStringAsync());
+                await LogToGlimpse(response.StatusCode + ": " + await response.Content.ReadAsStringAsync());
             }
 
             return response;
         }
 
+        public async Task LogToGlimpse(string content)
+        {
+            HttpRequestMessage logRequest = new HttpRequestMessage(HttpMethod.Post, BaseApiUrl + "log");
+
+            StringContent logContent = new StringContent(content, Encoding.UTF8);
+            logRequest.Content = logContent;
+
+            HttpResponseMessage response = await client.SendAsync(logRequest);
+        } 
     }
 }
