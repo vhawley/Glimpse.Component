@@ -125,10 +125,9 @@ namespace LiveSplit.UI.Components
                             comparisons[key].Add(comparisonTime.Value.TotalMilliseconds - lasts[key].Value);
                             lasts[key] = comparisonTime.Value.TotalMilliseconds;
                         }
-                        catch (Exception exc)
+                        catch (Exception)
                         {
                             comparisons[key].Add(null);
-                            await Factory.LogToGlimpse(exc.Message);
                         }
                     }
                 }
